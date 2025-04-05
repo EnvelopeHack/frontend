@@ -8,12 +8,16 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 export default async function Home() {
 	const [placeTable, top2and3, pares, statistics] = await Promise.all([
-		fetch("http://192.168.213.129:8080/api/v1/probabilities/place-table").then((res) =>
+		fetch("https://electives.t-university.exfl.ru/api/v1/probabilities/place-table").then((res) =>
 			res.json()
 		),
-		fetch("http://192.168.213.129:8080/api/v1/probabilities/top2and3").then((res) => res.json()),
-		fetch("http://192.168.213.129:8080/api/v1/probabilities/pares").then((res) => res.json()),
-		fetch("http://192.168.213.129:8080/api/v1/statistics").then((res) => res.json()),
+		fetch("https://electives.t-university.exfl.ru/api/v1/probabilities/top2and3").then((res) =>
+			res.json()
+		),
+		fetch("https://electives.t-university.exfl.ru/api/v1/probabilities/pares").then((res) =>
+			res.json()
+		),
+		fetch("https://electives.t-university.exfl.ru/api/v1/statistics").then((res) => res.json()),
 	]);
 
 	const simulationData = {

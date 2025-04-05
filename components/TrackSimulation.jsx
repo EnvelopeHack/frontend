@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const TrackSimulation = () => {
+	const ws = useRef(null);
+	const [isConnected, setIsConnected] = useState(false);
+
 	const [raceData, setRaceData] = useState({
 		second: 0,
 		positions: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
@@ -10,33 +13,6 @@ const TrackSimulation = () => {
 	const [isRunning, setIsRunning] = useState(false);
 	const [results, setResults] = useState({});
 	const [finishedRunners, setFinishedRunners] = useState({});
-
-	const colors = {
-		1: "oklch(50.5% 0.213 27.518)",
-		2: "oklch(48.8% 0.243 264.376)",
-		3: "oklch(55.3% 0.195 38.402)",
-		4: "oklch(52.7% 0.154 150.069)",
-		5: "oklch(49.6% 0.265 301.924)",
-		6: "oklch(21.6% 0.006 56.043)",
-	};
-
-	const fetchRaceData = async () => {
-		// Замените на реальный API-запрос
-		const newPositions = {};
-		Object.keys(raceData.positions).forEach((id) => {
-			const currentPos = raceData.positions[id];
-			if (currentPos < 100) {
-				newPositions[id] = Math.min(100, currentPos + Math.random() * 20);
-			} else {
-				newPositions[id] = 100;
-			}
-		});
-
-		return {
-			second: raceData.second + 1,
-			positions: newPositions,
-		};
-	};
 
 	const calculateResults = (positions) => {
 		const sorted = Object.entries(positions)
@@ -59,49 +35,119 @@ const TrackSimulation = () => {
 		};
 	};
 
-	useEffect(() => {
-		let interval;
-		if (isRunning) {
-			interval = setInterval(async () => {
-				const newData = await fetchRaceData();
-				setRaceData(newData);
-
-				const newFinished = { ...finishedRunners };
-				Object.entries(newData.positions).forEach(([id, pos]) => {
-					if (pos >= 100 && !newFinished[id]) {
-						newFinished[id] = true;
-					}
-				});
-				setFinishedRunners(newFinished);
-
-				const currentResults = calculateResults({
-					...newData.positions,
-					...finishedRunners,
-				});
-
-				setResults((prev) => ({
-					...prev,
-					...currentResults,
-				}));
-
-				const allFinished = Object.values(newData.positions).every((pos) => pos >= 100);
-				if (allFinished) {
-					setIsRunning(false);
-				}
-			}, 1000);
+	// Подключение к WebSocket
+	const connectWebSocket = () => {
+		if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+			return;
 		}
-		return () => clearInterval(interval);
-	}, [isRunning, raceData, finishedRunners]);
 
-	const startRace = () => {
-		setFinishedRunners({});
+		// Подключаемся к вашему WebSocket серверу
+		ws.current = new WebSocket("wss://electives.t-university.exfl.ru/race-simulation");
+
+		ws.current.onopen = () => {
+			console.log("Connected to WebSocket");
+			setIsConnected(true);
+		};
+
+		ws.current.onmessage = (event) => {
+			const data = JSON.parse(event.data);
+			setRaceData(data);
+			// console.log(data);
+
+			const newFinished = { ...finishedRunners };
+			let hasNewFinishers = false;
+
+			Object.entries(data.positions).forEach(([id, pos]) => {
+				if (pos >= 100 && !newFinished[id]) {
+					newFinished[id] = true;
+					hasNewFinishers = true;
+				}
+			});
+
+			if (hasNewFinishers) {
+				// setFinishedRunners(newFinished);
+				setFinishedRunners((prev) => ({ ...prev, ...newFinished }));
+			}
+
+			const currentResults = calculateResults({
+				...data.positions, // данные только что пришедшие
+				...newFinished, // только что вычисленные finishedRunners
+			});
+
+			setResults((prev) => ({
+				...prev,
+				...currentResults,
+			}));
+
+			// console.log(currentResults);
+			// console.log(finishedRunners);
+
+			if (Object.values(data.positions).every((pos) => pos >= 100)) {
+				stopSimulation();
+			}
+		};
+
+		ws.current.onclose = () => {
+			console.log("Disconnected from WebSocket");
+			setIsConnected(false);
+			setIsRunning(false);
+		};
+
+		ws.current.onerror = (error) => {
+			console.error("WebSocket error:", error);
+			setIsConnected(false);
+			setIsRunning(false);
+		};
+	};
+
+	// Отключение от WebSocket
+	const disconnectWebSocket = () => {
+		if (ws.current) {
+			ws.current.close();
+		}
+	};
+
+	const colors = {
+		1: "oklch(50.5% 0.213 27.518)",
+		2: "oklch(48.8% 0.243 264.376)",
+		3: "oklch(55.3% 0.195 38.402)",
+		4: "oklch(52.7% 0.154 150.069)",
+		5: "oklch(49.6% 0.265 301.924)",
+		6: "oklch(21.6% 0.006 56.043)",
+	};
+
+	const startSimulation = () => {
+		if (!isConnected) {
+			connectWebSocket();
+		}
+		// setFinishedRunners({});
 		setRaceData({
 			second: 0,
 			positions: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
 		});
-		setIsRunning(true);
 		setResults({});
+
+		setIsRunning(true);
 	};
+
+	// Остановка симуляции
+	const stopSimulation = () => {
+		disconnectWebSocket();
+
+		setIsRunning(false);
+	};
+
+	useEffect(() => {
+		console.log("Race data updated:", raceData);
+	}, [raceData]);
+
+	useEffect(() => {
+		console.log("Finished runners updated:", finishedRunners);
+	}, [finishedRunners]);
+
+	useEffect(() => {
+		console.log("Results updated:", results);
+	}, [results]);
 
 	return (
 		<div className="flex flex-col">
@@ -145,7 +191,7 @@ const TrackSimulation = () => {
 						? "bg-gray-600 hover:bg-gray-600 border-gray-600 opacity-75 hover:text-white-50 cursor-not-allowed"
 						: "bg-transparent hover:bg-white-50"
 				}`}
-				onClick={startRace}
+				onClick={startSimulation}
 				disabled={isRunning}
 			>
 				{isRunning ? "Гонка идёт..." : "Старт"}
