@@ -64,7 +64,7 @@ export default async function Home() {
 					autoPlay
 					muted
 					controls
-					className="max-w-2xl mx-auto rounded-[8px]"
+					className="max-w-2xl w-full mx-auto rounded-[8px]"
 				></video>
 			</div>
 		</main>
