@@ -7,6 +7,8 @@ import Image from "next/image";
 
 const inter = Inter({
 	variable: "--font-inter",
+	subsets: ["cyrillic"],
+	// display: "swap",
 });
 
 export const metadata = {
