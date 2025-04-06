@@ -14,17 +14,6 @@ export const metadata = {
 	description: "Система симуляции и анализа забегов для тренера по легкой атлетике",
 };
 
-function getBackgroundImage(srcSet = "") {
-	const imageSet = srcSet
-		.split(", ")
-		.map((str) => {
-			const [url, dpi] = str.split(" ");
-			return `url("${url}") ${dpi}`;
-		})
-		.join(", ");
-	return `image-set(${imageSet})`;
-}
-
 export default function RootLayout({ children }) {
 	return (
 		<html lang="ru" className="h-full">

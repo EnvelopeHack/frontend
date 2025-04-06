@@ -1,3 +1,5 @@
+"use server"; // Указываем, что это серверный экшен
+
 import ChartStat from "@/components/ChartStat";
 import PairProbabilityTable from "@/components/PairProbabilityTable";
 import PlacesProbabilityTable from "@/components/PlacesProbabilityTable";
@@ -6,34 +8,31 @@ import TopsProbabilityTable from "@/components/TopsProbabilityTable";
 import TrackSimulation from "@/components/TrackSimulation";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
-export default async function Home() {
+async function fetchData() {
 	const [placeTable, top2and3, pares, statistics] = await Promise.all([
-		fetch("https://electives.t-university.exfl.ru/api/v1/probabilities/place-table").then((res) =>
+		fetch("https://electives.t-university.exfl.ru/api/v1/probabilities/place-table", {
+			// Отключаем кэш для тестирования
+		}).then((res) => res.json()),
+		fetch("https://electives.t-university.exfl.ru/api/v1/probabilities/top2and3", {}).then(
+			(res) => res.json()
+		),
+		fetch("https://electives.t-university.exfl.ru/api/v1/probabilities/pares", {}).then((res) =>
 			res.json()
 		),
-		fetch("https://electives.t-university.exfl.ru/api/v1/probabilities/top2and3").then((res) =>
+		fetch("https://electives.t-university.exfl.ru/api/v1/statistics", {}).then((res) =>
 			res.json()
 		),
-		fetch("https://electives.t-university.exfl.ru/api/v1/probabilities/pares").then((res) =>
-			res.json()
-		),
-		fetch("https://electives.t-university.exfl.ru/api/v1/statistics").then((res) => res.json()),
 	]);
 
-	const simulationData = {
-		second: 3,
-		positions: {
-			1: 30.78,
-			2: 30.61,
-			3: 29.14,
-			4: 29.75,
-			5: 28.59,
-			6: 28.73,
-		},
-	};
+	console.log("Fetched data on server:", { statistics });
+	return { placeTable, top2and3, pares, statistics };
+}
+
+export default async function Home() {
+	const { placeTable, top2and3, pares, statistics } = await fetchData();
 
 	return (
-		<main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2fr_1fr_2fr] gap-x-3 gap-y-8 container mt-4">
+		<main className="grid grid-cols-1 md:grid-cols-[2fr_1fr] lg:grid-cols-[2fr_1fr_2fr] gap-x-3 gap-y-8 mb-6 container mt-4">
 			<div className="flex items-end">
 				<RunnersTable />
 				<PlacesProbabilityTable data={placeTable} />
@@ -56,7 +55,17 @@ export default async function Home() {
 			</div>
 
 			<div className="col-span-full">
-				<TrackSimulation data={simulationData} />
+				<TrackSimulation />
+			</div>
+
+			<div className="w-full col-span-full mt-10">
+				<video
+					src="https://electives.t-university.exfl.ru/video"
+					autoPlay
+					muted
+					controls
+					className="max-w-2xl mx-auto rounded-[8px]"
+				></video>
 			</div>
 		</main>
 	);

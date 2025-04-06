@@ -10,7 +10,7 @@ import {
 
 const PlacesProbabilityTable = async ({ data }) => {
 	return (
-		<div className="flex flex-col items-center w-full ml-4">
+		<div className="flex flex-col items-center w-[calc(100%-44px)] md:w-full ml-4">
 			<h2 className="table-header">Вероятности занятия места</h2>
 			<Table>
 				<TableHeader>

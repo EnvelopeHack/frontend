@@ -11,7 +11,7 @@ import RunnerSquare from "./RunnerSquare";
 
 const PairProbabilityTable = ({ data }) => {
 	return (
-		<div className="flex flex-col items-center w-full ml-4 mr-0 lg:mr-4 lg:ml-0">
+		<div className="flex flex-col items-center w-[calc(100%-44px)] lg:w-full ml-4 mr-0 lg:mr-4 lg:ml-0">
 			<h2 className="table-header">Парная статистика</h2>
 			<Table>
 				<TableHeader>
